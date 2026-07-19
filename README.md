@@ -11,7 +11,7 @@ Your goal is to:
 - Evaluate what your system gets right and wrong
 - Reflect on how this mirrors real world AI recommenders
 
-Replace this paragraph with your own summary of what your version does.
+My version scores each song against a listener's stated taste. It looks at mood, genre, energy, valence, and acousticness. Matches on mood and genre earn flat points. Energy and valence earn points based on how close they are, not just yes or no. I also spent time testing the system on purpose, trying weird or conflicting profiles to see where the scoring breaks down or quietly favors certain users.
 
 ---
 
@@ -102,10 +102,10 @@ You can add more tests in `tests/test_recommender.py`.
 ---
 
 ## Sample Recommendation Output
-User profile - mood: happy; genre: pop
 
 CLI output:
 ```
+User profile - mood: happy, genre: pop
 Top recommendations:
 
 Sunrise City - Score: 6.96
@@ -122,7 +122,63 @@ Because: energy close: 0.75 vs target 0.80
 
 Block Party Anthem - Score: 1.88
 Because: energy close: 0.86 vs target 0.80
+--------------------------------------------------------------------------------
+User profile - mood: happy, genre: High-energy pop
+Top recommendations:
+
+Sunrise City - Score: 4.94
+Because: mood matched (happy); energy close: 0.82 vs target 0.85
+
+Rooftop Lights - Score: 4.82
+Because: mood matched (happy); energy close: 0.76 vs target 0.85
+
+Block Party Anthem - Score: 1.98
+Because: energy close: 0.86 vs target 0.85
+
+Storm Runner - Score: 1.88
+Because: energy close: 0.91 vs target 0.85
+
+Gym Hero - Score: 1.84
+Because: energy close: 0.93 vs target 0.85
+--------------------------------------------------------------------------------
+User profile - mood: chill, genre: chill lofi
+Top recommendations:
+
+Midnight Coding - Score: 4.96
+Because: mood matched (chill); energy close: 0.42 vs target 0.40
+
+Library Rain - Score: 4.90
+Because: mood matched (chill); energy close: 0.35 vs target 0.40
+
+Spacewalk Thoughts - Score: 4.76
+Because: mood matched (chill); energy close: 0.28 vs target 0.40
+
+Focus Flow - Score: 2.00
+Because: energy close: 0.40 vs target 0.40
+
+Coffee Shop Stories - Score: 1.94
+Because: energy close: 0.37 vs target 0.40
+--------------------------------------------------------------------------------
+User profile - mood: intense, genre: deep intense rock
+Top recommendations:
+
+Gym Hero - Score: 4.96
+Because: mood matched (intense); energy close: 0.93 vs target 0.95
+
+Storm Runner - Score: 4.92
+Because: mood matched (intense); energy close: 0.91 vs target 0.95
+
+Neon Pulse Overdrive - Score: 2.00
+Because: energy close: 0.95 vs target 0.95
+
+Crown of Thunder - Score: 1.96
+Because: energy close: 0.97 vs target 0.95
+
+Block Party Anthem - Score: 1.82
+Because: energy close: 0.86 vs target 0.95
 ``` 
+
+
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or demo video link here -->
 
@@ -136,6 +192,14 @@ Use this section to document the experiments you ran. For example:
 - What happened when you added tempo or valence to the score
 - How did your system behave for different types of users
 
+I turned off the mood check to see how much it really mattered. The rankings changed completely. Songs with a perfect energy match jumped ahead of songs that used to win on mood alone.
+
+I tried a profile with genre text that didn't exactly match the catalog, like "High-energy pop" instead of "pop." The genre points never fired, since matching is exact text only. The recommender quietly fell back to energy as the deciding factor, without saying so.
+
+I tried profiles with conflicting preferences, like a "sad" mood paired with high energy. The system doesn't notice the conflict. It just adds up the points like normal and returns whatever score comes out.
+
+I counted how many songs share each mood and genre in my catalog. Most moods and genres only have one matching song. That means most listeners can only ever get one "perfect" match in the whole catalog, no matter how the numbers work out.
+
 ---
 
 ## Limitations and Risks
@@ -148,7 +212,8 @@ Examples:
 - It does not understand lyrics or language
 - It might over favor one genre or mood
 
-You will go deeper on this in your model card.
+It only works on a small, 18-song catalog. It does not understand lyrics, language, or the era a song is from. Genre and mood only match on exact text, so close-enough words score nothing. Most moods and genres only have one song each, so niche listeners get weak results. There's also a gap in the energy data between 0.55 and 0.74, so medium-energy listeners don't have many good options. The weights I used (3/2/2/2/1) are my own guesses, not based on real listener behavior. And since it has no idea about other users, it can never surprise someone with a song they wouldn't have picked for themselves.
+
 
 ---
 
@@ -162,6 +227,10 @@ Write 1 to 2 paragraphs here about what you learned:
 
 - about how recommenders turn data into predictions
 - about where bias or unfairness could show up in systems like this
+
+Building this taught me that a recommender is really just a set of rules someone decided on, and those rules always carry some bias. My scoring math was correct, but the weights I picked and the shape of my catalog still tilted results toward common tastes like "happy pop" and away from niche ones. Nothing in the code was broken, but the results still weren't fair to every kind of listener.
+
+I also learned that testing matters as much as building. Turning off the mood check, trying mismatched text, and testing weird or conflicting profiles showed me problems I never would have found just by reading my own code. It changed how I think about real recommender apps: an algorithm can look objective on paper while still quietly favoring whoever the data and weights happen to be built around.
 
 
 
